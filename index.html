@@ -65,11 +65,12 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase JS SDK (Utilise v10 pour l'import) -->
+    <!-- Firebase JS SDK (Utilise v12.6.0 pour l'import) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, Timestamp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+        // Mise à jour des imports vers la v12.6.0 pour correspondre à votre configuration
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, Timestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
         import { createRoot } from 'https://unpkg.com/react-dom@18/client.js';
 
         // Variables globales pour le code JSX
@@ -95,12 +96,33 @@
         window.X = X;
         window.Heart = Heart;
 
-        // Code d'initialisation de Firebase (doit être exécuté en dehors de React)
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        window.app = initializeApp(firebaseConfig);
-        window.auth = getAuth(window.app);
-        window.db = getFirestore(window.app);
-        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+        // --- DÉMARRAGE FINAL DE FIREBASE AVEC VOS CLÉS ---
+        
+        // Configuration de l'application (VOS CLÉS COPIÉES)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDChyY0OzzxVl-m4ZO8JypZGqUXqGumJY4",
+            authDomain: "reunion-9739b.firebaseapp.com",
+            projectId: "reunion-9739b",
+            storageBucket: "reunion-9739b.firebasestorage.app",
+            messagingSenderId: "830257239920",
+            appId: "1:830257239920:web:c1b090362a27a9083fe1b5"
+        };
+        
+        const defaultAppId = firebaseConfig.projectId; 
+        
+        try {
+            window.app = initializeApp(firebaseConfig);
+            window.auth = getAuth(window.app);
+            window.db = getFirestore(window.app);
+            window.appId = defaultAppId;
+            console.log("Firebase App Initialized successfully!");
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            window.auth = null;
+            window.db = null;
+            window.appId = defaultAppId;
+        }
+        // -----------------------------------
     </script>
 </head>
 <body class="min-h-screen">
@@ -258,7 +280,6 @@
     const FloatingSeaCreature = ({ delay, duration, top, direction, color }) => {
       const isRight = direction === 'right';
       
-      // NOUVEAU: Les méduses ont maintenant des couleurs passées en prop
       const medusaFillColor = color.fill;
       const medusaStrokeColor = color.stroke;
 
@@ -556,30 +577,31 @@
       
       useEffect(() => {
         const initAuth = async () => {
+          // Si Firebase Auth n'a pas pu être initialisé
+          if (!window.auth) return; 
+          
           try {
-            if (window.auth) {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                  await signInWithCustomToken(window.auth, __initial_auth_token);
-                } else {
-                  await signInAnonymously(window.auth);
-                }
-            } else {
-                console.error("Firebase Auth not initialized in window object.");
-            }
+            // Dans ce contexte GitHub Pages, on signe toujours anonymement
+            await window.signInAnonymously(window.auth);
           } catch (e) {
-            console.error("Auth error", e);
+            console.error("Auth error:", e);
           }
         };
         initAuth();
         if (window.auth) {
-            return onAuthStateChanged(window.auth, setUser);
+            return window.onAuthStateChanged(window.auth, setUser);
         }
       }, []); 
 
       useEffect(() => {
-        if (!user || !window.db || !window.appId || !window.collection || !window.query || !window.onSnapshot) return;
+        // On vérifie explicitement que la base de données est disponible
+        if (!user || !window.db || !window.appId || !window.collection || !window.query || !window.onSnapshot) {
+            console.warn("Firestore access skipped: Firebase DB not fully connected.");
+            return;
+        }
         
         try {
+            // Le chemin de la collection doit correspondre à la règle Firestore
             const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'bookings'));
             const unsubscribe = window.onSnapshot(q, (snapshot) => {
               const bks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -587,7 +609,7 @@
             }, (error) => console.error("Snapshot error:", error));
             return () => unsubscribe();
         } catch (e) {
-            console.error("Firestore initialization failed:", e);
+            console.error("Firestore operation failed:", e);
         }
       }, [user]);
 
@@ -794,26 +816,28 @@
         if (!name.trim()) { setError("On a besoin de ton prénom !"); return; }
         if (!dateRange.start || !dateRange.end) { setError("Sélectionne une date de début et de fin (2 clics)."); return; }
         
+        // Si Firebase n'est pas initialisé (cela signifie qu'il n'y a pas de vraies clés)
+        if (!window.db) {
+             setError("Base de données non connectée. Le site est en mode démo. Veuillez vérifier la configuration Firebase.");
+             return;
+        }
+
         try {
-          if (window.addDoc && window.collection && window.db && window.appId && window.Timestamp) {
-              await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'bookings'), {
-                name,
-                plusOne,
-                guestCount: plusOne ? 2 : 1,
-                startDate: dateRange.start,
-                endDate: dateRange.end,
-                userId: userId || 'anon',
-                createdAt: window.Timestamp.now()
-              });
-              setSuccess(true);
-              onSuccess(name); // Envoi du nom au composant parent
-              setError('');
-          } else {
-              setError("Erreur : Les fonctions Firebase ne sont pas disponibles.");
-          }
+          await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'bookings'), {
+            name,
+            plusOne,
+            guestCount: plusOne ? 2 : 1,
+            startDate: dateRange.start,
+            endDate: dateRange.end,
+            userId: userId || 'anon',
+            createdAt: window.Timestamp.now()
+          });
+          setSuccess(true);
+          onSuccess(name); // Envoi du nom au composant parent
+          setError('');
         } catch (e) {
           console.error(e);
-          setError(`Erreur technique : ${e.message}`);
+          setError(`Erreur technique de sauvegarde: Vérifiez vos règles Firestore ou votre connexion. Message: ${e.message}`);
         }
       };
 
