@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Réunion 2026 | Télévacances sous les tropiques</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuration des polices Tailwind (Inter) et couleurs personnalisées -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+        :root {
+            --color-indigo-900: 312e81; /* Bleu Profond */
+            --color-yellow-500: f59e0b; /* Jaune/Or */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom scrollbar for better aesthetics */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(67, 56, 202, 0.4); /* Tailwind indigo-700/40 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(249, 247, 232, 0.5); /* Light background */
+        }
+        /* Custom stripes for full capacity */
+        .bg-stripes {
+          background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0, rgba(255,255,255,.5) 1px, transparent 1px, transparent 8px);
+        }
+        /* Custom animation for gentle floating */
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0); }
+            50% { transform: translateY(-10px) translateX(5px) rotate(2deg); }
+        }
+        .animate-pulse-slow {
+            animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .animate-bounce-slow {
+            animation: bounce 6s infinite;
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.8s ease-out forwards;
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- React & Babel Compiler (Required for single-file JSX) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase JS SDK (Utilise v10 pour l'import) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, Timestamp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+        import { createRoot } from 'https://unpkg.com/react-dom@18/client.js';
+
+        // Variables globales pour le code JSX
+        window.initializeApp = initializeApp;
+        window.getAuth = getAuth;
+        window.signInAnonymously = signInAnonymously;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.getFirestore = getFirestore;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.onSnapshot = onSnapshot;
+        window.query = query;
+        window.Timestamp = Timestamp;
+        window.createRoot = createRoot; 
+        
+        // Exposer les modules Lucide-React manuellement (pour une utilisation en JSX)
+        import { Palmtree, Check, AlertCircle, CalendarDays, X, Heart } from 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
+        window.Palmtree = Palmtree;
+        window.Check = Check;
+        window.AlertCircle = AlertCircle;
+        window.CalendarDays = CalendarDays;
+        window.X = X;
+        window.Heart = Heart;
+
+        // Code d'initialisation de Firebase (doit être exécuté en dehors de React)
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        window.app = initializeApp(firebaseConfig);
+        window.auth = getAuth(window.app);
+        window.db = getFirestore(window.app);
+        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+    </script>
+</head>
+<body class="min-h-screen">
+    <div id="root">
+        <!-- Contenu JSX de La Réunion 2026 ici -->
+    </div>
+    
+    <!-- Inclut tout le code de l'application React, converti en JavaScript -->
+    <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+    
+    // Note: Les imports Firebase sont maintenant des variables globales (window.xxx)
+    // à cause de l'environnement simple HTML + Babel.
+
+    // --- CONSTANTES ---
+    const TRIP_START = new Date('2026-03-14');
+    const TRIP_END = new Date('2026-04-26');
+    const MAX_CAPACITY = 4;
+    const BIRD_NAMES = [
+      "Adrien", "Vincent", "Samy", "Rimane", "Pierre", "Leïla", 
+      "Achille", "Alix", "Sarah", "Matthieu", "Wandrille", 
+      "Marie-Christine", "Joséphine", "Alex", "Henri", "Candela", "Riccardo",
+      "Laura", "Oscar", "Le requin de la Réunion"
+    ];
+
+    const SEA_CREATURE_COUNT = 3; 
+
+    // --- UTILITAIRES ---
+    const formatDate = (date) => {
+      // S'assurer que la date est valide
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    };
+
+    const formatFrDate = (dateStr) => {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    };
+
+    const getDaysArray = (start, end) => {
+      const arr = [];
+      const dt = new Date(start);
+      const endDt = new Date(end);
+      if (isNaN(dt.getTime()) || isNaN(endDt.getTime()) || dt > endDt) return arr;
+      while (dt <= endDt) {
+          arr.push(new Date(dt));
+          dt.setDate(dt.getDate() + 1);
+      }
+      return arr;
+    };
+
+    // --- COMPOSANTS VISUELS ---
+
+    const PaperTexture = () => (
+      <div className="fixed inset-0 pointer-events-none opacity-40 z-0 mix-blend-multiply" 
+           style={{
+             backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E")`,
+             backgroundColor: '#F9F7E8' 
+           }}
+      />
+    );
+
+    const Sun = () => (
+      <div className="absolute top-10 left-1/2 transform -translate-x-1/2 w-64 h-64 rounded-full bg-yellow-200 blur-3xl opacity-60 animate-pulse-slow pointer-events-none z-0" />
+    );
+
+    const PalmSilhouette = ({ className }) => (
+      <div className={`absolute bottom-0 text-[#1a4c30] opacity-30 pointer-events-none select-none z-0 ${className}`}>
+        <Palmtree size={400} strokeWidth={1} />
+      </div>
+    );
+
+    const Waves = () => {
+      return (
+        <div className="absolute bottom-0 left-0 w-full h-80 overflow-hidden pointer-events-none z-10">
+          <svg className="w-full h-full" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path fill="#312e81" fillOpacity="0.2">
+              <animate attributeName="d" dur="20s" repeatCount="indefinite"
+                values="
+                M0,250 C240,350 480,150 720,250 C960,350 1200,150 1440,250 L1440,320 L0,320 Z;
+                M0,200 C240,100 480,300 720,200 C960,100 1200,300 1440,200 L1440,320 L0,320 Z;
+                M0,250 C240,350 480,150 720,250 C960,350 1200,150 1440,250 L1440,320 L0,320 Z"
+              />
+            </path>
+            <path fill="#4338ca" fillOpacity="0.25">
+              <animate attributeName="d" dur="15s" repeatCount="indefinite"
+                values="
+                M0,220 C320,120 420,320 640,200 C880,80 1080,280 1440,160 L1440,320 L0,320 Z;
+                M0,180 C360,280 500,80 720,180 C940,280 1100,100 1440,220 L1440,320 L0,320 Z;
+                M0,220 C320,120 420,320 640,200 C880,80 1080,280 1440,160 L1440,320 L0,320 Z"
+              />
+            </path>
+            <path fill="#6366f1" fillOpacity="0.3">
+              <animate attributeName="d" dur="8s" repeatCount="indefinite"
+                values="
+                M0,280 C180,200 250,340 500,240 C750,140 900,300 1100,220 C1300,140 1380,280 1440,240 L1440,320 L0,320 Z;
+                M0,240 C150,320 300,180 550,280 C800,380 950,200 1150,280 C1350,360 1400,200 1440,240 L1440,320 L0,320 Z;
+                M0,280 C180,200 250,340 500,240 C750,140 900,300 1100,220 C1300,140 1380,280 1440,240 L1440,320 L0,320 Z"
+              />
+            </path>
+          </svg>
+        </div>
+      );
+    };
+
+    // Animation des Oiseaux
+    const Bird = ({ name, delay, duration, top, direction }) => {
+      const isRight = direction === 'right';
+      return (
+        <div 
+          className="absolute flex flex-col items-center pointer-events-none z-10"
+          style={{
+            top: `${top}%`,
+            left: isRight ? '-10%' : '110%',
+            animation: `fly-${direction} ${duration}s linear infinite`,
+            animationDelay: `${delay}s`,
+            opacity: 0.9
+          }}
+        >
+          <svg 
+            width="48" height="48" viewBox="0 0 24 24" 
+            fill="currentColor" 
+            className={`text-indigo-950 ${isRight ? '' : 'scale-x-[-1]'}`}
+            style={{ filter: 'drop-shadow(2px 2px 0px rgba(255,255,255,0.4))' }}
+          >
+            <path d="M22 12c-2 0-4-2-6-2s-4 2-6 2-4-2-6-2-2 2-2 2s2 2 4 2 4-2 6-2 4 2 6 2 4-2 4-2z" />
+            <path d="M22 12q-5-6-10-6T2 12" fill="none" stroke="currentColor" strokeWidth="1.2"/>
+          </svg>
+          <span className="text-[11px] font-serif tracking-widest text-indigo-950 mt-0.5 bg-white/70 px-2 rounded-sm backdrop-blur-sm shadow-sm whitespace-nowrap">
+            {name}
+          </span>
+          <style>{`
+            @keyframes fly-right {
+              0% { transform: translate(0, 0) rotate(0deg); }
+              25% { transform: translate(30vw, -30px) rotate(-5deg); }
+              50% { transform: translate(60vw, 10px) rotate(2deg); }
+              75% { transform: translate(90vw, -20px) rotate(-3deg); }
+              100% { transform: translate(120vw, 0) rotate(0deg); }
+            }
+            @keyframes fly-left {
+              0% { transform: translate(0, 0) rotate(0deg); }
+              25% { transform: translate(-30vw, 20px) rotate(5deg); }
+              50% { transform: translate(-60vw, -15px) rotate(-2deg); }
+              75% { transform: translate(-90vw, 25px) rotate(3deg); }
+              100% { transform: translate(-120vw, 0) rotate(0deg); }
+            }
+          `}</style>
+        </div>
+      );
+    };
+
+    // Composant pour les créatures marines flottantes (Méduse uniquement désormais)
+    const FloatingSeaCreature = ({ delay, duration, top, direction, color }) => {
+      const isRight = direction === 'right';
+      
+      // NOUVEAU: Les méduses ont maintenant des couleurs passées en prop
+      const medusaFillColor = color.fill;
+      const medusaStrokeColor = color.stroke;
+
+      return (
+        <div 
+          className="absolute pointer-events-none z-15"
+          style={{
+            top: `${top}%`,
+            left: isRight ? '-15%' : '115%',
+            animation: `swim-${direction} ${duration}s linear infinite`,
+            animationDelay: `${delay}s`,
+            opacity: 0.8,
+            transform: isRight ? 'scaleX(-1)' : 'scaleX(1)' 
+          }}
+        >
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Cloche */}
+            <path d="M12 2C8.68629 2 6 4.68629 6 8C6 11.3137 9.8732 16.9234 12 22C14.1268 16.9234 18 11.3137 18 8C18 4.68629 15.3137 2 12 2Z" fill={medusaFillColor} opacity="0.7"/>
+            {/* Bras centraux */}
+            <path d="M9 13C9 14.6569 10.3431 16 12 16C13.6569 16 15 14.6569 15 13" stroke={medusaStrokeColor} strokeWidth="1.5" strokeLinecap="round" strokeDasharray="1 3"/>
+            {/* Tentacules */}
+            <path d="M10 10V18M14 10V18M7 11L5 19M17 11L19 19" stroke={medusaStrokeColor} strokeWidth="1" strokeLinecap="round"/>
+          </svg>
+
+          <style>{`
+            @keyframes swim-right {
+              0% { transform: translate(0, 0) scaleX(-1); }
+              25% { transform: translate(30vw, -20px) scaleX(-1); }
+              50% { transform: translate(60vw, 10px) scaleX(-1); }
+              75% { transform: translate(90vw, -10px) scaleX(-1); }
+              100% { transform: translate(120vw, 0) scaleX(-1); }
+            }
+            @keyframes swim-left {
+              0% { transform: translate(0, 0) scaleX(1); }
+              25% { transform: translate(-30vw, 10px) scaleX(1); }
+              50% { transform: translate(-60vw, -20px) scaleX(1); }
+              75% { transform: translate(-90vw, 20px) scaleX(1); }
+              100% { transform: translate(-120vw, 0) scaleX(1); }
+            }
+          `}</style>
+        </div>
+      );
+    };
+
+
+    // Composant pour les cœurs flottants
+    const FloatingHeart = ({ delay, duration, top, left, size, rotation, name = null }) => {
+      const heartColors = ['#ef4444', '#f97316', '#facc15', '#a78bfa', '#ec4899', '#f472b6']; 
+      const color = heartColors[Math.floor(Math.random() * heartColors.length)];
+
+      return (
+        <div 
+          className="absolute pointer-events-none z-30"
+          style={{
+            top: `${top}%`,
+            left: `${left}%`,
+            width: `${size}px`,
+            height: `${size}px`,
+            animation: `float-heart 15s ease-in-out infinite`,
+            animationDelay: `${delay}s`,
+            transform: `rotate(${rotation}deg) scale(1)`,
+            opacity: 0.8 + Math.random() * 0.2 
+          }}
+        >
+          <Heart fill={color} stroke="none" className="drop-shadow-sm" />
+          {name && (
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-[10px] font-bold text-shadow-sm whitespace-nowrap"
+                  style={{ fontSize: `${size / 3}px` }}>
+              {name}
+            </span>
+          )}
+          <style>{`
+            @keyframes float-heart {
+              0% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+              25% { transform: translateY(-10px) translateX(5px) rotate(5deg); opacity: 0.9; }
+              50% { transform: translateY(0px) translateX(0px) rotate(0deg); opacity: 1; }
+              75% { transform: translateY(10px) translateX(-5px) rotate(-5deg); opacity: 0.9; }
+              100% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+            }
+          `}</style>
+        </div>
+      );
+    };
+
+    // --- TOOLTIP REQUIN ---
+    const SharkTooltip = ({ data, x, y }) => {
+      if (!data) return null;
+
+      return (
+        <div 
+          className="fixed z-50 pointer-events-none drop-shadow-xl animate-fade-in"
+          style={{ 
+            left: x, 
+            top: y - 100, 
+            transform: 'translateX(-50%)' 
+          }}
+        >
+          <div className="relative text-indigo-900">
+             <svg width="200" height="100" viewBox="0 0 200 100" fill="currentColor" className="text-white">
+                <path d="M20,50 Q60,10 100,10 Q140,10 180,50 Q140,90 100,90 Q60,90 20,50 Z" />
+                <path d="M90,10 Q100,-20 110,10 Z" />
+                <path d="M180,50 L200,20 L200,80 Z" />
+             </svg>
+             
+             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                <h4 className="font-bold text-xs uppercase tracking-wider mb-1 text-indigo-800 border-b border-indigo-100 pb-0.5">
+                  Occupants
+                </h4>
+                <div className="text-[10px] space-y-1">
+                  {data.bookings.map((b, idx) => (
+                    <div key={idx} className="leading-tight">
+                      <span className="font-bold">{b.name}</span>
+                      <span className="block text-indigo-400 text-[9px] italic">
+                         {formatFrDate(b.startDate)} - {formatFrDate(b.endDate)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+             </div>
+             <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] border-t-white mx-auto mt-[-15px] relative z-10"></div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- GANTT CHART MODAL ---
+    const GanttModal = ({ isOpen, onClose, bookings }) => {
+      if (!isOpen) return null;
+
+      // Générer toutes les dates du séjour
+      const allDates = getDaysArray(TRIP_START, TRIP_END);
+      
+      // Aplatir les réservations pour gérer les +1 comme des lignes distinctes
+      const rows = bookings.flatMap(b => {
+        const mainRow = {
+          id: b.id,
+          name: b.name,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          isPlusOne: false
+        };
+        if (b.plusOne) {
+          return [mainRow, {
+            id: `${b.id}-plusone`,
+            name: `Invité de ${b.name}`,
+            startDate: b.startDate,
+            endDate: b.endDate,
+            isPlusOne: true
+          }];
+        }
+        return [mainRow];
+      });
+
+      return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-indigo-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#F9F7E8] w-full max-w-5xl h-[80vh] rounded-xl shadow-2xl flex flex-col overflow-hidden relative border-4 border-white">
+            {/* Header */}
+            <div className="flex justify-between items-center p-4 bg-indigo-900 text-[#F9F7E8]">
+              <h2 className="text-xl font-serif font-bold flex items-center gap-2">
+                <CalendarDays size={20} />
+                Qui vient quand ?
+              </h2>
+              <button onClick={onClose} className="hover:bg-indigo-800 p-1 rounded-full transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Gantt Content */}
+            <div className="flex-1 overflow-hidden flex flex-col relative">
+              <div className="overflow-x-auto flex-1 custom-scrollbar">
+                <div className="min-w-max">
+                  {/* Timeline Header */}
+                  <div className="flex border-b border-indigo-200 sticky top-0 bg-[#F9F7E8] z-20">
+                    <div className="w-48 shrink-0 p-2 font-bold text-indigo-900 border-r border-indigo-200 sticky left-0 bg-[#F9F7E8] z-30 shadow-sm">
+                      Invités
+                    </div>
+                    {allDates.map(date => (
+                      <div key={date.toISOString()} className="w-8 shrink-0 flex flex-col items-center justify-center p-1 border-r border-indigo-100/50">
+                        <span className="text-[9px] uppercase text-indigo-400 font-bold">{date.toLocaleDateString('fr-FR', { weekday: 'narrow' })}</span>
+                        <span className="text-xs font-bold text-indigo-900">{date.getDate()}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rows */}
+                  <div className="pb-4">
+                    {rows.map((row, idx) => (
+                      <div key={idx} className="flex border-b border-indigo-100 hover:bg-indigo-50 transition-colors">
+                        <div className="w-48 shrink-0 p-2 flex items-center border-r border-indigo-200 sticky left-0 bg-[#F9F7E8] z-10">
+                          <div className={`text-sm truncate ${row.isPlusOne ? 'pl-4 text-indigo-500 italic text-xs' : 'font-bold text-indigo-900'}`}>
+                            {row.isPlusOne ? '↳ +1' : row.name}
+                          </div>
+                        </div>
+                        {allDates.map(date => {
+                          const dateStr = formatDate(date);
+                          const start = formatDate(new Date(row.startDate)); // Ensure string comparison works
+                          const end = formatDate(new Date(row.endDate));
+                          
+                          // Check inclusivité
+                          const isBooked = dateStr >= start && dateStr <= end;
+                          const isFirst = dateStr === start;
+                          const isLast = dateStr === end;
+
+                          return (
+                            <div key={dateStr} className="w-8 shrink-0 h-10 border-r border-indigo-50 relative flex items-center justify-center">
+                              {isBooked && (
+                                <div className={`
+                                  h-5 w-full bg-indigo-600/80 shadow-sm
+                                  ${isFirst ? 'rounded-l-full ml-1' : ''}
+                                  ${isLast ? 'rounded-r-full mr-1' : ''}
+                                  ${!isFirst && !isLast ? 'w-[calc(100%+1px)]' : ''} 
+                                `}></div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                    {rows.length === 0 && (
+                      <div className="p-8 text-center text-indigo-400 italic">Aucune réservation pour le moment.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+
+    // Feu d'artifice
+    const Fireworks = ({ active }) => {
+      const canvasRef = useRef(null);
+      useEffect(() => {
+        if (!active) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particles = [];
+        
+        function createParticle(x, y) {
+          const hue = Math.random() * 360;
+          const count = 40;
+          for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 * i) / count;
+            const velocity = Math.random() * 5 + 2;
+            particles.push({
+              x, y,
+              vx: Math.cos(angle) * velocity,
+              vy: Math.sin(angle) * velocity,
+              alpha: 1,
+              hue,
+              decay: Math.random() * 0.02 + 0.015
+            });
+          }
+        }
+        createParticle(canvas.width / 2, canvas.height / 3);
+        setTimeout(() => createParticle(canvas.width / 4, canvas.height / 2), 400);
+        setTimeout(() => createParticle(3 * canvas.width / 4, canvas.height / 2.5), 800);
+
+        function animate() {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.globalCompositeOperation = 'lighter';
+          particles.forEach((p, i) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.08; 
+            p.alpha -= p.decay;
+            ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, ${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            if (p.alpha <= 0) particles.splice(i, 1);
+          });
+          if (particles.length > 0) requestAnimationFrame(animate);
+        }
+        animate();
+      }, [active]);
+      if (!active) return null;
+      return <canvas ref={canvasRef} className="fixed inset-0 z-50 pointer-events-none" />;
+    };
+
+    // --- APP PRINCIPALE ---
+
+    const App = () => {
+      const [view, setView] = useState('landing');
+      const [user, setUser] = useState(null);
+      const [bookings, setBookings] = useState([]);
+      const [showGantt, setShowGantt] = useState(false);
+      const [confirmedGuestName, setConfirmedGuestName] = useState(null); 
+      
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            if (window.auth) {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                  await signInWithCustomToken(window.auth, __initial_auth_token);
+                } else {
+                  await signInAnonymously(window.auth);
+                }
+            } else {
+                console.error("Firebase Auth not initialized in window object.");
+            }
+          } catch (e) {
+            console.error("Auth error", e);
+          }
+        };
+        initAuth();
+        if (window.auth) {
+            return onAuthStateChanged(window.auth, setUser);
+        }
+      }, []); 
+
+      useEffect(() => {
+        if (!user || !window.db || !window.appId || !window.collection || !window.query || !window.onSnapshot) return;
+        
+        try {
+            const q = window.query(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'bookings'));
+            const unsubscribe = window.onSnapshot(q, (snapshot) => {
+              const bks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              setBookings(bks);
+            }, (error) => console.error("Snapshot error:", error));
+            return () => unsubscribe();
+        } catch (e) {
+            console.error("Firestore initialization failed:", e);
+        }
+      }, [user]);
+
+      // NOUVEAU: Couleurs pour les méduses (rose/violet)
+      const medusaColors = useMemo(() => [
+        { fill: '#f472b6', stroke: '#ec4899' }, // Rose
+        { fill: '#a78bfa', stroke: '#8b5cf6' }, // Violet
+        { fill: '#e879f9', stroke: '#d946ef' }, // Magenta
+      ], []);
+
+      return (
+        <div className="min-h-screen bg-[#F9F7E8] text-indigo-900 font-sans overflow-hidden relative selection:bg-indigo-200">
+          <PaperTexture />
+          <Sun />
+          <PalmSilhouette className="-left-20 scale-150 rotate-12 bottom-0" />
+          <PalmSilhouette className="-right-20 scale-125 -rotate-12 bottom-0" />
+          
+          <div className="fixed inset-0 pointer-events-none z-20">
+            {BIRD_NAMES.map((bird, i) => (
+              <Bird 
+                key={bird} 
+                name={bird} 
+                top={8 + (i * 17) % 65} 
+                delay={Math.random() * 40} 
+                duration={20 + Math.random() * 15}
+                direction={i % 2 === 0 ? 'right' : 'left'}
+              />
+            ))}
+            {/* Créatures marines animées : uniquement les méduses */}
+            {Array.from({ length: SEA_CREATURE_COUNT }).map((_, i) => {
+              const color = medusaColors[i % medusaColors.length];
+              return (
+                <FloatingSeaCreature
+                  key={`creature-${i}`}
+                  top={25 + (i * 8) % 55} 
+                  delay={i * 8 + Math.random() * 5}
+                  duration={18 + Math.random() * 10}
+                  direction={i % 2 === 0 ? 'left' : 'right'}
+                  color={color} // Passage des couleurs
+                />
+              );
+            })}
+          </div>
+
+          <div className="relative z-30 min-h-screen flex flex-col">
+            {view === 'landing' ? (
+              <LandingPage onEnter={() => setView('booking')} guestName={confirmedGuestName} />
+            ) : (
+              <BookingPage 
+                bookings={bookings} 
+                userId={user?.uid} 
+                authReady={!!user} 
+                onSuccess={(name) => {
+                  setConfirmedGuestName(name);
+                  setView('landing'); // Retour à la landing page après succès
+                }}
+              />
+            )}
+          </div>
+          
+          {/* Bouton Gantt Flottant */}
+          <button 
+            onClick={() => setShowGantt(true)}
+            className="fixed bottom-6 right-6 z-40 bg-indigo-900 text-[#F9F7E8] px-5 py-3 rounded-full shadow-lg hover:bg-yellow-500 hover:text-indigo-900 transition-all font-bold flex items-center gap-2 animate-bounce-slow"
+          >
+            <CalendarDays size={18} />
+            <span className="text-sm">Qui vient quand alors ?</span>
+          </button>
+
+          {/* Modal Gantt */}
+          <GanttModal isOpen={showGantt} onClose={() => setShowGantt(false)} bookings={bookings} />
+
+          <Waves />
+        </div>
+      );
+    }
+
+    // --- LANDING PAGE ---
+
+    function LandingPage({ onEnter, guestName }) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 relative z-40">
+           {/* Cœur personnalisé si un nom a été confirmé */}
+           {guestName && (
+               <FloatingHeart
+                 key={guestName} 
+                 name={guestName}
+                 top={20} 
+                 left={50} 
+                 size={80} 
+                 rotation={0}
+                 delay={0}
+                 duration={25}
+               />
+           )}
+          <div className="bg-white/30 backdrop-blur-sm p-12 rounded-full border border-indigo-100 shadow-xl mb-8 animate-fade-in-up">
+            <h1 className="text-6xl md:text-8xl font-serif font-bold text-indigo-900 mb-2 tracking-tighter" style={{ textShadow: '2px 2px 0px rgba(255,255,255,0.8)' }}>
+              La Réunion
+            </h1>
+            <div className="w-16 h-1 bg-indigo-900 mx-auto mb-4 opacity-50"></div>
+            <p className="text-xl md:text-2xl font-light tracking-widest uppercase mb-2">
+              Mars • Avril 2026
+            </p>
+            <p className="text-lg italic font-serif text-indigo-700">
+              Télévacances sous les tropiques
+            </p>
+          </div>
+
+          <button 
+            onClick={onEnter}
+            className="group relative px-8 py-3 bg-indigo-900 text-[#F9F7E8] text-lg tracking-widest font-bold uppercase overflow-hidden rounded-sm hover:shadow-lg transition-all transform hover:-translate-y-1"
+          >
+            <span className="relative z-10 group-hover:text-white">Confirmer sa venue</span>
+            <div className="absolute inset-0 bg-yellow-500 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300 ease-out"></div>
+          </button>
+        </div>
+      );
+    }
+
+    // --- BOOKING PAGE ---
+
+    function BookingPage({ bookings, userId, authReady, onSuccess }) {
+      const [name, setName] = useState('');
+      const [plusOne, setPlusOne] = useState(false);
+      const [dateRange, setDateRange] = useState({ start: null, end: null });
+      const [success, setSuccess] = useState(false);
+      const [error, setError] = useState('');
+      
+      const [hoveredDay, setHoveredDay] = useState(null); 
+
+      // 1. Calcul des Capacités avec détails des réservations
+      const capacityMap = useMemo(() => {
+        const map = {};
+        bookings.forEach(booking => {
+          const dates = getDaysArray(new Date(booking.startDate), new Date(booking.endDate));
+          dates.forEach(d => {
+            const key = formatDate(d);
+            if (!map[key]) {
+              map[key] = { count: 0, bookings: [] };
+            }
+            map[key].count += booking.guestCount;
+            
+            let guestName = booking.name;
+            if (booking.plusOne) guestName += " (+1)";
+            
+            map[key].bookings.push({
+              name: guestName,
+              startDate: booking.startDate,
+              endDate: booking.endDate
+            });
+          });
+        });
+        return map;
+      }, [bookings]);
+
+      const handleDateClick = (dateStr) => {
+        setError('');
+        
+        if (dateRange.start && dateRange.end) {
+          setDateRange({ start: null, end: null });
+          return; 
+        }
+        const needed = plusOne ? 2 : 1;
+        const currentCap = capacityMap[dateStr]?.count || 0;
+        
+        if (currentCap + needed > MAX_CAPACITY) {
+          setError("Désolé, cette date est complète ou n'a pas assez de place.");
+          return;
+        }
+
+        if (!dateRange.start) {
+          setDateRange({ start: dateStr, end: null });
+          return;
+        }
+
+        if (dateRange.start && !dateRange.end) {
+          if (dateStr < dateRange.start) {
+            setDateRange({ start: dateStr, end: null });
+          } else {
+            const daysToCheck = getDaysArray(new Date(dateRange.start), new Date(dateStr));
+            const hasConflict = daysToCheck.some(d => {
+              const c = capacityMap[formatDate(d)]?.count || 0;
+              return (c + needed) > MAX_CAPACITY;
+            });
+
+            if (hasConflict) {
+              setError("Impossible : il n'y a pas assez de place pour tous les jours de cette période.");
+              return;
+            }
+            setDateRange({ ...dateRange, end: dateStr });
+          }
+        }
+      };
+
+      const selectedDatesVisual = useMemo(() => {
+        if (!dateRange.start) return [];
+        if (!dateRange.end) return [dateRange.start];
+        const arr = getDaysArray(new Date(dateRange.start), new Date(dateRange.end));
+        return arr.map(formatDate);
+      }, [dateRange]);
+
+      const handleSubmit = async () => {
+        if (!authReady) { setError("Connexion en cours... Attends quelques secondes."); return; }
+        if (!name.trim()) { setError("On a besoin de ton prénom !"); return; }
+        if (!dateRange.start || !dateRange.end) { setError("Sélectionne une date de début et de fin (2 clics)."); return; }
+        
+        try {
+          if (window.addDoc && window.collection && window.db && window.appId && window.Timestamp) {
+              await window.addDoc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'bookings'), {
+                name,
+                plusOne,
+                guestCount: plusOne ? 2 : 1,
+                startDate: dateRange.start,
+                endDate: dateRange.end,
+                userId: userId || 'anon',
+                createdAt: window.Timestamp.now()
+              });
+              setSuccess(true);
+              onSuccess(name); // Envoi du nom au composant parent
+              setError('');
+          } else {
+              setError("Erreur : Les fonctions Firebase ne sont pas disponibles.");
+          }
+        } catch (e) {
+          console.error(e);
+          setError(`Erreur technique : ${e.message}`);
+        }
+      };
+
+      // --- Gestion du survol pour le requin ---
+      const handleDayHover = (e, dateStr) => {
+        const data = capacityMap[dateStr];
+        if (data && data.bookings.length > 0) {
+          const rect = e.target.getBoundingClientRect();
+          setHoveredDay({
+            x: rect.left + rect.width / 2,
+            y: rect.top,
+            data: data
+          });
+        } else {
+          setHoveredDay(null);
+        }
+      };
+
+      const handleDayLeave = () => {
+        setHoveredDay(null);
+      };
+
+      if (success) {
+        return (
+          <div className="flex-1 flex flex-col items-center justify-center relative z-40 text-center animate-fade-in min-h-[80vh]">
+            
+            {/* NOUVEAU: 80 Cœurs flottants sur la page Youpi! */}
+            <div className="fixed inset-0 pointer-events-none z-25">
+               {Array.from({ length: 80 }).map((_, i) => (
+                 <FloatingHeart 
+                   key={i} 
+                   top={Math.random() * 100}
+                   left={Math.random() * 100}
+                   size={30 + Math.random() * 40} 
+                   rotation={Math.random() * 360}
+                   delay={i * 0.15 + Math.random() * 5}
+                   duration={20 + Math.random() * 15}
+                 />
+               ))}
+            </div>
+
+            <Fireworks active={true} />
+            {/* Mise à jour du style pour enlever le liseré rose et du texte */}
+            <div className="bg-white/80 backdrop-blur-md p-8 rounded-lg shadow-2xl z-50 max-w-lg mx-4"> 
+              <h2 className="text-4xl font-serif text-indigo-900 mb-4">Youpi !</h2>
+              <p className="text-xl mb-4 text-indigo-900 font-bold">
+                Votre voyage à l'île de la Réunion est confirmé !
+              </p>
+              <p className="text-lg italic font-serif text-indigo-700 mt-4">
+                L'aventure ne fait que commencer, on parle logement rapidement &lt;3
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // Calcul du texte de la plage de dates
+      let dateText = '-';
+      if (dateRange.start) {
+          if (!dateRange.end) {
+              dateText = `du ${formatFrDate(dateRange.start)} au ...`;
+          } else {
+              const days = selectedDatesVisual.length;
+              dateText = `du ${formatFrDate(dateRange.start)} au ${formatFrDate(dateRange.end)} (${days} jours)`;
+          }
+      }
+
+      return (
+        <div className="flex flex-col md:flex-row w-full max-w-6xl mx-auto p-4 md:p-10 gap-8 relative z-40 h-[80vh]">
+          
+          {/* Tooltip Global */}
+          {hoveredDay && <SharkTooltip data={hoveredDay.data} x={hoveredDay.x} y={hoveredDay.y} />}
+
+          {/* FORMULAIRE */}
+          <div className="w-full md:w-1/3 flex flex-col gap-6 bg-white/60 backdrop-blur-md p-6 rounded-lg shadow-sm border border-indigo-50 h-fit">
+            <div>
+              <h2 className="text-2xl font-serif font-bold text-indigo-900 mb-1">Rejoins-nous</h2>
+              <p className="text-sm text-indigo-700">Sélectionne tes dates (Arrivée puis Départ).</p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-indigo-900 mb-1">1. Ton Prénom</label>
+                <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-[#F9F7E8] border-b-2 border-indigo-200 focus:border-indigo-900 outline-none px-3 py-2 text-indigo-900 transition-colors"
+                  placeholder="ex: Wandrille"
+                />
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className={`w-5 h-5 border-2 border-indigo-900 flex items-center justify-center transition-colors ${plusOne ? 'bg-indigo-900' : 'bg-transparent'}`}>
+                  {plusOne && <Check size={14} className="text-[#F9F7E8]" />}
+                </div>
+                <input type="checkbox" className="hidden" checked={plusOne} onChange={(e) => setPlusOne(e.target.checked)} />
+                <span className="text-indigo-900 group-hover:text-indigo-700 transition-colors">Je viens avec un +1</span>
+              </label>
+            </div>
+            <div className="mt-auto pt-4 border-t border-indigo-100">
+              <div className="flex flex-col mb-4 text-sm gap-1">
+                 <span className="font-bold text-indigo-900">Séjour :</span>
+                 <span className="text-indigo-700 italic">{dateText}</span>
+              </div>
+              {error && (
+                <div className="bg-red-100 text-red-800 text-xs p-2 mb-3 rounded flex items-center gap-2 break-words">
+                  <AlertCircle size={16} className="shrink-0"/> <span>{error}</span>
+                </div>
+              )}
+              <button 
+                onClick={handleSubmit}
+                disabled={!dateRange.start || !dateRange.end}
+                className="w-full py-3 bg-indigo-900 text-[#F9F7E8] font-bold uppercase tracking-widest hover:bg-yellow-500 hover:text-indigo-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Confirmer !
+              </button>
+            </div>
+            <div className="flex flex-col gap-2 text-[10px] justify-center opacity-80 mt-2">
+               <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-100 border border-indigo-300"></div> Libre</div>
+               <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-200 border border-yellow-400"></div> Une chambre restante (Survole pour voir qui !)</div>
+               <div className="flex items-center gap-2"><div className="w-3 h-3 bg-gray-300 opacity-50 relative overflow-hidden"><div className="absolute inset-0 bg-stripes"></div></div> La villa est complète</div>
+            </div>
+          </div>
+          {/* CALENDRIER */}
+          <div className="flex-1 bg-white/40 backdrop-blur-sm rounded-lg border border-white/50 p-6 overflow-y-auto custom-scrollbar">
+            <h3 className="text-center font-serif text-xl mb-6 text-indigo-900 border-b border-indigo-100 pb-2">Mars & Avril 2026</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               <MonthCalendar 
+                 month={2} 
+                 year={2026} 
+                 capacityMap={capacityMap} 
+                 selectedDates={selectedDatesVisual} 
+                 handleDateClick={handleDateClick}
+                 onDayHover={handleDayHover}
+                 onDayLeave={handleDayLeave}
+                 neededSpots={plusOne ? 2 : 1}
+               />
+               <MonthCalendar 
+                 month={3} 
+                 year={2026} 
+                 capacityMap={capacityMap} 
+                 selectedDates={selectedDatesVisual} 
+                 handleDateClick={handleDateClick}
+                 onDayHover={handleDayHover}
+                 onDayLeave={handleDayLeave}
+                 neededSpots={plusOne ? 2 : 1}
+               />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- CALENDAR COMPONENT ---
+
+    function MonthCalendar({ month, year, capacityMap, selectedDates, handleDateClick, onDayHover, onDayLeave, neededSpots }) {
+      const monthName = new Date(year, month).toLocaleString('fr-FR', { month: 'long' });
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const firstDay = new Date(year, month, 1).getDay(); 
+      const offset = firstDay === 0 ? 6 : firstDay - 1;
+      const days = [];
+      for (let i = 0; i < offset; i++) days.push(null);
+      for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+
+      return (
+        <div>
+          <h4 className="capitalize font-bold text-center mb-4 text-indigo-800">{monthName}</h4>
+          <div className="grid grid-cols-7 gap-1 text-center mb-2 text-xs font-bold text-indigo-400">
+            <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {days.map((date, idx) => {
+              if (!date) return <div key={`empty-${idx}`} />;
+              
+              const dateStr = formatDate(date);
+              const isBeforeTrip = date < TRIP_START;
+              const isAfterTrip = date > TRIP_END;
+              const isOutOfRange = isBeforeTrip || isAfterTrip;
+              
+              const dayData = capacityMap[dateStr] || { count: 0, bookings: [] };
+              const currentGuests = dayData.count;
+
+              const isFull = currentGuests >= MAX_CAPACITY;
+              const willOverfill = (currentGuests + neededSpots) > MAX_CAPACITY;
+              const isPartial = currentGuests > 0 && currentGuests < MAX_CAPACITY;
+              
+              const isSelected = selectedDates.includes(dateStr);
+              const isDisabled = isOutOfRange || (isFull && !isSelected);
+
+              let bgClass = "bg-indigo-50/50 hover:bg-indigo-100 text-indigo-900";
+              if (isSelected) bgClass = "bg-indigo-900 text-yellow-100 shadow-md transform scale-105";
+              else if (isFull) bgClass = "bg-gray-200 text-gray-400 cursor-not-allowed opacity-60 bg-stripes";
+              else if (willOverfill) bgClass = "bg-gray-100 text-gray-500 cursor-not-allowed opacity-90"; 
+              else if (isPartial) bgClass = "bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200";
+              
+              if (isOutOfRange) bgClass = "opacity-0 pointer-events-none"; 
+
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => !isDisabled && handleDateClick(dateStr)}
+                  onMouseEnter={(e) => onDayHover && onDayHover(e, dateStr)}
+                  onMouseLeave={onDayLeave}
+                  disabled={isDisabled}
+                  className={`
+                    aspect-square rounded-full flex flex-col items-center justify-center text-sm transition-all duration-200 relative
+                    ${bgClass}
+                  `}
+                >
+                  <span>{date.getDate()}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Rendu de l'application
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+        // La création du root est gérée par le script en module
+        if (window.createRoot) {
+            window.createRoot(rootElement).render(<App />);
+        } else {
+            // Fallback pour les environnements plus anciens (ne pas utiliser dans le code réel)
+            ReactDOM.render(<App />, rootElement);
+        }
+    }
+    </script>
+</body>
+</html>
