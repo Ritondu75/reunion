@@ -61,19 +61,22 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
-    <!-- React & Babel Compiler (Required for single-file JSX) -->
+    
+    <!-- Étape 1 : Charger les librairies non-modulaires EN PREMIER (React, ReactDOM) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <!-- NOUVEAU: Utilisation de la version legacy de ReactDOM pour la compatibilité CDN -->
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase JS SDK (Utilise v12.6.0 pour l'import) -->
+    <!-- NOUVEAU: Chargement de Lucide-React ici pour qu'il trouve l'objet global React -->
+    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
+    
+    <!-- Firebase JS SDK (Doit être type="module" pour les imports Firebase) -->
     <script type="module">
         // Mise à jour des imports vers la v12.6.0 pour correspondre à votre configuration
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, Timestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
         
-        // Variables globales pour le code JSX
+        // Variables globales pour le code JSX (Doivent être exposées AVANT le chargement du code Babel)
         window.initializeApp = initializeApp;
         window.getAuth = getAuth;
         window.signInAnonymously = signInAnonymously;
@@ -86,15 +89,12 @@
         window.query = query;
         window.Timestamp = Timestamp;
         
-        // --- CORRECTION CRITIQUE POUR LES ICÔNES LUCIDE (Méthode de Fallback) ---
-        // 1. Charger la librairie (elle expose window.LucideReact)
-        import 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
-        
-        // 2. Exposer les fonctions d'icônes à l'objet window APRES LE CHARGEMENT DU MODULE
+        // --- CORRECTION CRITIQUE POUR LES ICÔNES LUCIDE ---
+        // Le script Lucide-React chargé ci-dessus expose LucideReact dans l'objet global window.
         const exposeLucide = () => {
             const LucideIcons = window.LucideReact;
             
-            // S'assurer que les icônes existent, sinon utiliser une fonction factice pour éviter ReferenceError
+            // On s'assure que les icônes nécessaires sont disponibles globalement pour le code Babel
             window.Palmtree = LucideIcons ? LucideIcons.Palmtree : () => null;
             window.Check = LucideIcons ? LucideIcons.Check : () => null;
             window.AlertCircle = LucideIcons ? LucideIcons.AlertCircle : () => null;
@@ -102,11 +102,11 @@
             window.X = LucideIcons ? LucideIcons.X : () => null;
             window.Heart = LucideIcons ? LucideIcons.Heart : () => null;
             
-            if (!LucideIcons) console.error("Lucide icons module not found on window.LucideReact, icons will be blank.");
+            if (!LucideIcons) console.error("Lucide icons module not found, icons will be blank.");
         };
-
-        // Utiliser setTimeout pour s'assurer que le CDN est chargé avant de lire l'objet global
-        setTimeout(exposeLucide, 200); 
+        
+        // Exécution de l'exposition Lucide immédiatement après la définition des fonctions Firebase.
+        exposeLucide();
         // ---------------------------------------------------------------------------
 
 
