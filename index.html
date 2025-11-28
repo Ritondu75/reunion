@@ -65,7 +65,7 @@
     <!-- Étape 1 : Charger les librairies non-modulaires EN PREMIER (React, ReactDOM) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- NOUVEAU: Mettre Lucide en troisième, avant Babel, pour qu'il trouve React -->
+    <!-- Mettre Lucide en troisième, avant Babel, pour qu'il trouve React -->
     <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
@@ -324,7 +324,7 @@
               25% { transform: translate(30vw, -20px) scaleX(-1); }
               50% { transform: translate(60vw, 10px) scaleX(-1); }
               75% { transform: translate(90vw, -10px) scaleX(-1); }
-              100% { transform: translate(120vw, 0) scaleX(-1); }
+              100% { transform: translate(120vw, 0) rotate(0deg); }
             }
             @keyframes swim-left {
               0% { transform: translate(0, 0) scaleX(1); }
