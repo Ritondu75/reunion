@@ -63,6 +63,7 @@
     </style>
     <!-- React & Babel Compiler (Required for single-file JSX) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <!-- NOUVEAU: Utilisation de la version legacy de ReactDOM pour la compatibilité CDN -->
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Firebase JS SDK (Utilise v12.6.0 pour l'import) -->
@@ -71,8 +72,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, Timestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-        import { createRoot } from 'https://unpkg.com/react-dom@18/client.js';
-
+        
         // Variables globales pour le code JSX
         window.initializeApp = initializeApp;
         window.getAuth = getAuth;
@@ -85,33 +85,24 @@
         window.onSnapshot = onSnapshot;
         window.query = query;
         window.Timestamp = Timestamp;
-        window.createRoot = createRoot; 
         
         // --- CORRECTION CRITIQUE POUR LES ICÔNES LUCIDE (Méthode de Fallback) ---
-        // On importe le module pour qu'il s'exécute, puis on lit l'objet global 'LucideReact' qu'il expose
+        // 1. Charger la librairie (elle expose window.LucideReact)
         import 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
         
-        // On attend que l'objet global (window.LucideReact) soit disponible avant d'exposer les composants
+        // 2. Exposer les fonctions d'icônes à l'objet window APRES LE CHARGEMENT DU MODULE
         const exposeLucide = () => {
-            if (window.LucideReact) {
-                const LucideIcons = window.LucideReact;
-                window.Palmtree = LucideIcons.Palmtree;
-                window.Check = LucideIcons.Check;
-                window.AlertCircle = LucideIcons.AlertCircle;
-                window.CalendarDays = LucideIcons.CalendarDays;
-                window.X = LucideIcons.X;
-                window.Heart = LucideIcons.Heart;
-                console.log("Lucide Icons exposed successfully.");
-            } else {
-                 // Si Lucide n'est toujours pas là, définir les icônes sur null pour éviter les ReferenceErrors dans la partie Babel
-                 window.Palmtree = () => null;
-                 window.Check = () => null;
-                 window.AlertCircle = () => null;
-                 window.CalendarDays = () => null;
-                 window.X = () => null;
-                 window.Heart = () => null;
-                 console.error("Lucide icons module not found on window.LucideReact.");
-            }
+            const LucideIcons = window.LucideReact;
+            
+            // S'assurer que les icônes existent, sinon utiliser une fonction factice pour éviter ReferenceError
+            window.Palmtree = LucideIcons ? LucideIcons.Palmtree : () => null;
+            window.Check = LucideIcons ? LucideIcons.Check : () => null;
+            window.AlertCircle = LucideIcons ? LucideIcons.AlertCircle : () => null;
+            window.CalendarDays = LucideIcons ? LucideIcons.CalendarDays : () => null;
+            window.X = LucideIcons ? LucideIcons.X : () => null;
+            window.Heart = LucideIcons ? LucideIcons.Heart : () => null;
+            
+            if (!LucideIcons) console.error("Lucide icons module not found on window.LucideReact, icons will be blank.");
         };
 
         // Utiliser setTimeout pour s'assurer que le CDN est chargé avant de lire l'objet global
@@ -994,7 +985,7 @@
                  selectedDates={selectedDatesVisual} 
                  handleDateClick={handleDateClick}
                  onDayHover={handleDayHover}
-                 onDayLeave={handleDayLeave}
+                 onDayLeave={onDayLeave}
                  neededSpots={plusOne ? 2 : 1}
                />
                <MonthCalendar 
@@ -1081,13 +1072,8 @@
     // Rendu de l'application
     const rootElement = document.getElementById('root');
     if (rootElement) {
-        // La création du root est gérée par le script en module
-        if (window.createRoot) {
-            window.createRoot(rootElement).render(<App />);
-        } else {
-            // Fallback pour les environnements plus anciens (ne pas utiliser dans le code réel)
-            ReactDOM.render(<App />, rootElement);
-        }
+        // Utilisation de la méthode legacy (v17) qui est plus fiable avec le CDN React
+        ReactDOM.render(<App />, rootElement);
     }
     </script>
 </body>
