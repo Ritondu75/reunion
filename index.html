@@ -87,14 +87,14 @@
         window.Timestamp = Timestamp;
         window.createRoot = createRoot; 
         
-        // Exposer les modules Lucide-React manuellement (pour une utilisation en JSX)
-        import { Palmtree, Check, AlertCircle, CalendarDays, X, Heart } from 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
-        window.Palmtree = Palmtree;
-        window.Check = Check;
-        window.AlertCircle = AlertCircle;
-        window.CalendarDays = CalendarDays;
-        window.X = X;
-        window.Heart = Heart;
+        // Exposer les modules Lucide-React manuellement (Pour corriger l'erreur d'import)
+        import * as LucideIcons from 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
+        window.Palmtree = LucideIcons.Palmtree;
+        window.Check = LucideIcons.Check;
+        window.AlertCircle = LucideIcons.AlertCircle;
+        window.CalendarDays = LucideIcons.CalendarDays;
+        window.X = LucideIcons.X;
+        window.Heart = LucideIcons.Heart;
 
         // --- DÉMARRAGE FINAL DE FIREBASE AVEC VOS CLÉS ---
         
