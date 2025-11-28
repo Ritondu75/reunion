@@ -87,14 +87,37 @@
         window.Timestamp = Timestamp;
         window.createRoot = createRoot; 
         
-        // Exposer les modules Lucide-React manuellement (Pour corriger l'erreur d'import)
-        import * as LucideIcons from 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
-        window.Palmtree = LucideIcons.Palmtree;
-        window.Check = LucideIcons.Check;
-        window.AlertCircle = LucideIcons.AlertCircle;
-        window.CalendarDays = LucideIcons.CalendarDays;
-        window.X = LucideIcons.X;
-        window.Heart = LucideIcons.Heart;
+        // --- CORRECTION CRITIQUE POUR LES ICÔNES LUCIDE (Méthode de Fallback) ---
+        // On importe le module pour qu'il s'exécute, puis on lit l'objet global 'LucideReact' qu'il expose
+        import 'https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js';
+        
+        // On attend que l'objet global (window.LucideReact) soit disponible avant d'exposer les composants
+        const exposeLucide = () => {
+            if (window.LucideReact) {
+                const LucideIcons = window.LucideReact;
+                window.Palmtree = LucideIcons.Palmtree;
+                window.Check = LucideIcons.Check;
+                window.AlertCircle = LucideIcons.AlertCircle;
+                window.CalendarDays = LucideIcons.CalendarDays;
+                window.X = LucideIcons.X;
+                window.Heart = LucideIcons.Heart;
+                console.log("Lucide Icons exposed successfully.");
+            } else {
+                 // Si Lucide n'est toujours pas là, définir les icônes sur null pour éviter les ReferenceErrors dans la partie Babel
+                 window.Palmtree = () => null;
+                 window.Check = () => null;
+                 window.AlertCircle = () => null;
+                 window.CalendarDays = () => null;
+                 window.X = () => null;
+                 window.Heart = () => null;
+                 console.error("Lucide icons module not found on window.LucideReact.");
+            }
+        };
+
+        // Utiliser setTimeout pour s'assurer que le CDN est chargé avant de lire l'objet global
+        setTimeout(exposeLucide, 200); 
+        // ---------------------------------------------------------------------------
+
 
         // --- DÉMARRAGE FINAL DE FIREBASE AVEC VOS CLÉS ---
         
