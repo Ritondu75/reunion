@@ -58,15 +58,14 @@
         }
         @keyframes fade-in-up {
             from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            to { transform: translateY(0); }
         }
     </style>
     
-    <!-- Étape 1 : Charger les librairies non-modulaires EN PREMIER (React, ReactDOM) -->
+    <!-- Étape 1 : Charger les librairies React et Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Mettre Lucide en troisième, avant Babel, pour qu'il trouve React -->
-    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
+    <!-- REMOVED: Lucide-React pour éviter le conflit de dépendance -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <!-- Firebase JS SDK (Doit être type="module" pour les imports Firebase) -->
@@ -89,24 +88,14 @@
         window.query = query;
         window.Timestamp = Timestamp;
         
-        // --- CORRECTION CRITIQUE POUR LES ICÔNES LUCIDE ---
-        // Cette fonction lie les icônes à l'objet window APRES le chargement de Lucide
-        const exposeLucide = () => {
-            const LucideIcons = window.LucideReact;
-            
-            // On s'assure que les icônes nécessaires sont disponibles globalement pour le code Babel/JSX
-            window.Palmtree = LucideIcons ? LucideIcons.Palmtree : () => null;
-            window.Check = LucideIcons ? LucideIcons.Check : () => null;
-            window.AlertCircle = LucideIcons ? LucideIcons.AlertCircle : () => null;
-            window.CalendarDays = LucideIcons ? LucideIcons.CalendarDays : () => null;
-            window.X = LucideIcons ? LucideIcons.X : () => null;
-            window.Heart = LucideIcons ? LucideIcons.Heart : () => null;
-            
-            if (!LucideIcons) console.error("Lucide icons module not found, icons will be blank.");
-        };
-        
-        // Exécution de l'exposition Lucide immédiatement après la définition des fonctions Firebase.
-        exposeLucide();
+        // --- REMPLACÉ: Les icônes Lucide sont remplacées par des fonctions Emoji ---
+        // Définition de fonctions factices pour éviter ReferenceError dans le code JSX
+        window.Palmtree = ({ size, strokeWidth, className }) => <span className={className} style={{ fontSize: '2rem' }}>🌴</span>;
+        window.Check = ({ size, className }) => <span className={className} style={{ fontSize: '1.2rem' }}>✅</span>;
+        window.AlertCircle = ({ size, className }) => <span className={className} style={{ fontSize: '1.2rem' }}>⚠️</span>;
+        window.CalendarDays = ({ size, className }) => <span className={className} style={{ fontSize: '1.2rem' }}>📅</span>;
+        window.X = ({ size, className }) => <span className={className} style={{ fontSize: '1.2rem' }}>❌</span>;
+        window.Heart = ({ fill, stroke, className }) => <span className={className} style={{ color: fill, fontSize: '1.5rem' }}>❤️</span>;
         // ---------------------------------------------------------------------------
 
 
@@ -206,6 +195,7 @@
     );
 
     const PalmSilhouette = ({ className }) => (
+      // Utilisation du composant factice Palmtree qui affiche l'emoji 🌴
       <div className={`absolute bottom-0 text-[#1a4c30] opacity-30 pointer-events-none select-none z-0 ${className}`}>
         <Palmtree size={400} strokeWidth={1} />
       </div>
@@ -331,7 +321,7 @@
               25% { transform: translate(-30vw, 10px) scaleX(1); }
               50% { transform: translate(-60vw, -20px) scaleX(1); }
               75% { transform: translate(-90vw, 20px) scaleX(1); }
-              100% { transform: translate(-120vw, 0) scaleX(1); }
+              100% { transform: translate(-120vw, 0) rotate(0deg); }
             }
           `}</style>
         </div>
@@ -944,7 +934,7 @@
               </div>
               <label className="flex items-center gap-3 cursor-pointer group">
                 <div className={`w-5 h-5 border-2 border-indigo-900 flex items-center justify-center transition-colors ${plusOne ? 'bg-indigo-900' : 'bg-transparent'}`}>
-                  {plusOne && <Check size={14} className="text-[#F9F7E8]" />}
+                  <Check size={14} className="text-[#F9F7E8]" />
                 </div>
                 <input type="checkbox" className="hidden" checked={plusOne} onChange={(e) => setPlusOne(e.target.checked)} />
                 <span className="text-indigo-900 group-hover:text-indigo-700 transition-colors">Je viens avec un +1</span>
